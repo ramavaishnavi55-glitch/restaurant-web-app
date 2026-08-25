@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
 import Home from './pages/Home/Home';
@@ -18,133 +18,83 @@ function App() {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState([]);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedCart = localStorage.getItem('cart');
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-    
-    if (storedCart) {
-      setCart(JSON.parse(storedCart));
-    }
-  }, []);
-
   const handleLogin = (userData) => {
     setUser(userData);
     setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const handleLogout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    setCart([]);
   };
 
-  const addToCart = (item) => {
-    const existingItem = cart.find(cartItem => cartItem.id === item.id);
-    
+  const addToCart = (dish) => {
+    const existingItem = cart.find(item => item.id === dish.id);
     if (existingItem) {
-      setCart(cart.map(cartItem =>
-        cartItem.id === item.id
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
+      setCart(cart.map(item =>
+        item.id === dish.id
+          ? { ...item, quantity: (item.quantity || 1) + (dish.quantity || 1) }
+          : item
       ));
     } else {
-      setCart([...cart, { ...item, quantity: 1 }]);
+      setCart([...cart, dish]);
     }
-    
-    localStorage.setItem('cart', JSON.stringify([...cart, item]));
   };
 
-  const removeFromCart = (itemId) => {
-    const updatedCart = cart.filter(item => item.id !== itemId);
-    setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+  const removeFromCart = (dishId) => {
+    setCart(cart.filter(item => item.id !== dishId));
   };
 
-  const updateCartQuantity = (itemId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(itemId);
+  const updateQuantity = (dishId, newQuantity) => {
+    if (newQuantity <= 0) {
+      removeFromCart(dishId);
     } else {
-      const updatedCart = cart.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
-      );
-      setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
+      setCart(cart.map(item =>
+        item.id === dishId
+          ? { ...item, quantity: newQuantity }
+          : item
+      ));
     }
   };
 
   const clearCart = () => {
     setCart([]);
-    localStorage.removeItem('cart');
   };
 
   return (
     <Router>
       <div className="App">
-        <Navbar 
-          isAuthenticated={isAuthenticated} 
+        <Navbar
+          isAuthenticated={isAuthenticated}
           user={user}
           cartCount={cart.length}
           onLogout={handleLogout}
         />
-        <main className="main-content">
+
+        <div className="main-content">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/menu" element={<Menu addToCart={addToCart} />} />
-            <Route 
-              path="/cart" 
-              element={
-                <Cart 
-                  cart={cart} 
-                  removeFromCart={removeFromCart}
-                  updateQuantity={updateCartQuantity}
-                />
-              } 
+            <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} />} />
+            <Route
+              path="/checkout"
+              element={isAuthenticated ? <Checkout cart={cart} user={user} clearCart={clearCart} /> : <Navigate to="/login" />}
             />
-            <Route 
-              path="/checkout" 
-              element={
-                <Checkout 
-                  cart={cart} 
-                  user={user}
-                  clearCart={clearCart}
-                />
-              } 
+            <Route path="/reservations" element={<Reservations user={user} />} />
+            <Route
+              path="/orders"
+              element={isAuthenticated ? <Orders user={user} /> : <Navigate to="/login" />}
             />
-            <Route 
-              path="/reservations" 
-              element={
-                isAuthenticated ? 
-                <Reservations user={user} /> : 
-                <Login onLogin={handleLogin} />
-              } 
-            />
-            <Route 
-              path="/orders" 
-              element={
-                isAuthenticated ? 
-                <Orders user={user} /> : 
-                <Login onLogin={handleLogin} />
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                isAuthenticated ? 
-                <Profile user={user} onLogout={handleLogout} /> : 
-                <Login onLogin={handleLogin} />
-              } 
+            <Route
+              path="/profile"
+              element={isAuthenticated ? <Profile user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
             />
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/register" element={<Register onLogin={handleLogin} />} />
           </Routes>
-        </main>
+        </div>
+
         <Footer />
       </div>
     </Router>

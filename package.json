@@ -1,16 +1,13 @@
 {
   "name": "restaurant-web-app",
   "version": "1.0.0",
-  "description": "Modern restaurant web application with React frontend",
+  "description": "Modern Restaurant Management and Ordering System",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.14.0",
-    "axios": "^1.4.0",
-    "date-fns": "^2.30.0",
-    "react-icons": "^4.11.0",
-    "react-hot-toast": "^2.4.0"
+    "react-icons": "^4.11.0"
   },
   "scripts": {
     "start": "react-scripts start",
